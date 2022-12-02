@@ -84,28 +84,27 @@ impl Search for Post {
 	{
 		use SearchError::*;
 		let url = format!("https://danbooru.donmai.us/posts.json?limit={limit}&tags={tags}+-status:deleted");
-		let result = reqwest::blocking::get(url).map_err(|e| RequestFailed(e))?;
+		let result = reqwest::blocking::get(url).map_err(RequestFailed)?;
 		let byte_vec = result.bytes().map_err(|_| EmptyResponse).map(|b| b.to_vec())?;
 		let bytes = byte_vec.as_slice();
-		
+
 		match bytes {
 			//['[', .., ']'] | ['[', .., ']', '\n']
 			[0x5B, .., 0x5D] | [0x5B, .., 0x5D, 0x0A] => {
-				let posts = serde_json::from_slice::<Vec<Post>>(bytes)
-					.map_err(|e| JsonDeserializationFailed(e))?;
-				
+				let posts = serde_json::from_slice::<Vec<Post>>(bytes).map_err(JsonDeserializationFailed)?;
 				Ok(posts)
-			},
+			}
 
 			//['{', .., '}'] | ['{', .., '}', '\n']
 			[0x7B, .., 0x7D] | [0x7B, .., 0x7D, 0x0A] => {
-				let error = serde_json::from_slice::<Error>(bytes)
-					.map_err(|e| JsonDeserializationFailed(e))?;
-				
+				let error = serde_json::from_slice::<Error>(bytes).map_err(JsonDeserializationFailed)?;
 				Err(Generic(error.message))
+			}
+
+			_ => match String::from_utf8(byte_vec) {
+				Ok(text) => Err(InvalidResponse(text)),
+				Err(error) => Err(InvalidResponseBytes(error.into_bytes())),
 			},
-			
-			_ => Err(InvalidResponse(byte_vec)),
 		}
 	}
 }

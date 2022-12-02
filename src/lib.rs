@@ -1,5 +1,6 @@
 mod search;
 mod download;
+pub mod e621;
 pub mod danbooru;
 
 use chrono::Utc;
@@ -29,3 +30,5 @@ pub enum Rating {
 	#[serde(alias = "e")]
 	Explicit,
 }
+
+const USER_AGENT: &str = const_format::formatcp!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));

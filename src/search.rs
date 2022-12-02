@@ -5,7 +5,6 @@ use crate::Post;
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Source {
 	E621,
-	E926,
 	Rule34,
 	Danbooru,
 }
@@ -14,9 +13,10 @@ pub enum Source {
 pub enum Error {
 	EmptyResponse,
 	UnimplementedSource,
-	
+
 	Generic(String),
-	InvalidResponse(Vec<u8>),
+	InvalidResponse(String),
+	InvalidResponseBytes(Vec<u8>),
 	RequestFailed(reqwest::Error),
 	JsonDeserializationFailed(serde_json::Error),
 }
@@ -56,7 +56,7 @@ impl<'l> SearchBuilder<'l> {
 
 		self
 	}
-	
+
 	pub fn limit(&mut self, limit: usize) -> &mut Self {
 		self.limit = limit;
 		self
@@ -88,14 +88,14 @@ impl<'l> SearchBuilder<'l> {
 	fn make_tags(&self) -> String {
 		let mut tags = String::new();
 		for tag in self.include.iter() {
-			if tags.len() != 0 {
+			if !tags.is_empty() {
 				tags.push('+');
 			}
 			tags.extend(transform_tag(tag));
 		}
 
 		for tag in self.exclude.iter() {
-			if tags.len() != 0 {
+			if !tags.is_empty() {
 				tags.push('+');
 			}
 			tags.push('-');
@@ -143,19 +143,17 @@ pub(crate) mod internal_traits {
 	impl SearchPriv for SearchBuilder<'_> {}
 
 	pub trait Search {
-		fn search(params: String, limit: usize) -> Result<Vec<Self>, Error>
+		fn search(tags: String, limit: usize) -> Result<Vec<Self>, Error>
 		where
 			Self: Sized;
 	}
 }
 
-fn transform_tag(tag: &str) -> impl Iterator<Item=char> + '_ {
-	tag.chars()
-		.map(|mut c| {
-			if c == ' ' {
-				c = '_'
-			}
-			c.to_lowercase()
-		})
-		.flatten()
+fn transform_tag(tag: &str) -> impl Iterator<Item = char> + '_ {
+	tag.chars().flat_map(|mut c| {
+		if c == ' ' {
+			c = '_'
+		}
+		c.to_lowercase()
+	})
 }
