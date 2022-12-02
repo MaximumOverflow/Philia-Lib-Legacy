@@ -2,6 +2,7 @@ use crate::{Error as SearchError, Rating, Timestamp, USER_AGENT};
 use crate::search::internal_traits::Search;
 use std::collections::HashMap;
 use serde_derive::Deserialize;
+use std::future::Future;
 
 #[derive(Debug, Deserialize)]
 pub struct Post {
@@ -117,26 +118,49 @@ impl Search for Post {
 
 		let url = format!("https://e621.net/posts.json?limit={limit}&tags={tags}+-status:deleted");
 		let result = client.get(url).send().map_err(RequestFailed)?;
-		let byte_vec = result.bytes().map_err(|_| EmptyResponse).map(|b| b.to_vec())?;
-		let bytes = byte_vec.as_slice();
+		let bytes = result.bytes().map_err(|_| EmptyResponse).map(|b| b.to_vec())?;
+		deserialize(bytes)
+	}
 
-		match bytes {
-			//['{', .., '}'] | ['{', .., '}', '\n']
-			[0x7B, .., 0x7D] | [0x7B, .., 0x7D, 0x0A] => {
-				#[derive(Deserialize)]
-				struct Posts {
-					posts: Vec<Post>,
-				}
+	fn search_async(tags: String, limit: usize) -> Box<dyn Future<Output=Result<Vec<Self>, SearchError>>> where Self: Sized {
+		Box::new(search_async(tags, limit))
+	}
+}
 
-				let posts = serde_json::from_slice::<Posts>(bytes).map_err(JsonDeserializationFailed)?;
-				Ok(posts.posts)
+async fn search_async(tags: String, limit: usize) -> Result<Vec<Post>, SearchError> {
+	use SearchError::*;
+
+	let client = reqwest::ClientBuilder::new()
+		.user_agent(USER_AGENT)
+		.https_only(false)
+		.build()
+		.unwrap();
+
+	let url = format!("https://e621.net/posts.json?limit={limit}&tags={tags}+-status:deleted");
+	let result = client.get(url).send().await.map_err(RequestFailed)?;
+	let bytes = result.bytes().await.map_err(|_| EmptyResponse).map(|b| b.to_vec())?;
+	deserialize(bytes)
+}
+
+fn deserialize(byte_vec: Vec<u8>) -> Result<Vec<Post>, SearchError> {
+	use SearchError::*;
+	let bytes = byte_vec.as_slice();
+	match bytes {
+		//['{', .., '}'] | ['{', .., '}', '\n']
+		[0x7B, .., 0x7D] | [0x7B, .., 0x7D, 0x0A] => {
+			#[derive(Deserialize)]
+			struct Posts {
+				posts: Vec<Post>,
 			}
 
-			_ => match String::from_utf8(byte_vec) {
-				Ok(text) => Err(InvalidResponse(text)),
-				Err(error) => Err(InvalidResponseBytes(error.into_bytes())),
-			},
+			let posts = serde_json::from_slice::<Posts>(bytes).map_err(JsonDeserializationFailed)?;
+			Ok(posts.posts)
 		}
+
+		_ => match String::from_utf8(byte_vec) {
+			Ok(text) => Err(InvalidResponse(text)),
+			Err(error) => Err(InvalidResponseBytes(error.into_bytes())),
+		},
 	}
 }
 

@@ -1,6 +1,7 @@
 use crate::{Error as SearchError, Rating, Timestamp};
 use crate::search::internal_traits::Search;
 use serde_derive::Deserialize;
+use std::future::Future;
 
 #[derive(Debug, Deserialize)]
 pub struct Post {
@@ -85,27 +86,43 @@ impl Search for Post {
 		use SearchError::*;
 		let url = format!("https://danbooru.donmai.us/posts.json?limit={limit}&tags={tags}+-status:deleted");
 		let result = reqwest::blocking::get(url).map_err(RequestFailed)?;
-		let byte_vec = result.bytes().map_err(|_| EmptyResponse).map(|b| b.to_vec())?;
-		let bytes = byte_vec.as_slice();
+		let bytes = result.bytes().map_err(|_| EmptyResponse).map(|b| b.to_vec())?;
+		deserialize(bytes)
+	}
 
-		match bytes {
-			//['[', .., ']'] | ['[', .., ']', '\n']
-			[0x5B, .., 0x5D] | [0x5B, .., 0x5D, 0x0A] => {
-				let posts = serde_json::from_slice::<Vec<Post>>(bytes).map_err(JsonDeserializationFailed)?;
-				Ok(posts)
-			}
+	fn search_async(tags: String, limit: usize) -> Box<dyn Future<Output=Result<Vec<Self>, SearchError>>> where Self: Sized {
+		Box::new(search_async(tags, limit))
+	}
+}
 
-			//['{', .., '}'] | ['{', .., '}', '\n']
-			[0x7B, .., 0x7D] | [0x7B, .., 0x7D, 0x0A] => {
-				let error = serde_json::from_slice::<Error>(bytes).map_err(JsonDeserializationFailed)?;
-				Err(Generic(error.message))
-			}
+async fn search_async(tags: String, limit: usize) -> Result<Vec<Post>, SearchError> {
+	use SearchError::*;
+	let url = format!("https://danbooru.donmai.us/posts.json?limit={limit}&tags={tags}+-status:deleted");
+	let result = reqwest::get(url).await.map_err(RequestFailed)?;
+	let bytes = result.bytes().await.map_err(|_| EmptyResponse).map(|b| b.to_vec())?;
+	deserialize(bytes)
+}
 
-			_ => match String::from_utf8(byte_vec) {
-				Ok(text) => Err(InvalidResponse(text)),
-				Err(error) => Err(InvalidResponseBytes(error.into_bytes())),
-			},
+fn deserialize(byte_vec: Vec<u8>) -> Result<Vec<Post>, SearchError> {
+	use SearchError::*;
+	let bytes = byte_vec.as_slice();
+	match bytes {
+		//['[', .., ']'] | ['[', .., ']', '\n']
+		[0x5B, .., 0x5D] | [0x5B, .., 0x5D, 0x0A] => {
+			let posts = serde_json::from_slice::<Vec<Post>>(bytes).map_err(JsonDeserializationFailed)?;
+			Ok(posts)
 		}
+
+		//['{', .., '}'] | ['{', .., '}', '\n']
+		[0x7B, .., 0x7D] | [0x7B, .., 0x7D, 0x0A] => {
+			let error = serde_json::from_slice::<Error>(bytes).map_err(JsonDeserializationFailed)?;
+			Err(Generic(error.message))
+		}
+
+		_ => match String::from_utf8(byte_vec) {
+			Ok(text) => Err(InvalidResponse(text)),
+			Err(error) => Err(InvalidResponseBytes(error.into_bytes())),
+		},
 	}
 }
 

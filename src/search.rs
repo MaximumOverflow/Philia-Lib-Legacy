@@ -137,15 +137,15 @@ impl<'l, T: 'l + Post> Iterator for PostIterator<'l, T> {
 }
 
 pub(crate) mod internal_traits {
+	use std::future::Future;
 	use crate::{Error, SearchBuilder};
 
 	pub trait SearchPriv {}
 	impl SearchPriv for SearchBuilder<'_> {}
 
 	pub trait Search {
-		fn search(tags: String, limit: usize) -> Result<Vec<Self>, Error>
-		where
-			Self: Sized;
+		fn search(tags: String, limit: usize) -> Result<Vec<Self>, Error> where Self: Sized;
+		fn search_async(tags: String, limit: usize) -> Box<dyn Future<Output=Result<Vec<Self>, Error>>> where Self: Sized;
 	}
 }
 
