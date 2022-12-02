@@ -127,6 +127,10 @@ fn deserialize(byte_vec: Vec<u8>) -> Result<Vec<Post>, SearchError> {
 }
 
 impl crate::Post for Post {
+	fn id(&self) -> usize {
+		self.id
+	}
+
 	fn md5(&self) -> &str {
 		&self.md5
 	}
