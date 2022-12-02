@@ -1,4 +1,5 @@
-pub mod search;
+mod search;
+mod download;
 pub mod danbooru;
 
 use chrono::Utc;
@@ -6,6 +7,7 @@ use std::any::Any;
 use serde_derive::Deserialize;
 
 pub use search::*;
+pub use download::*;
 pub type Timestamp = chrono::DateTime<Utc>;
 
 pub trait Post: Any + internal_traits::Search {

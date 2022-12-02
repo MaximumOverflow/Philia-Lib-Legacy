@@ -83,7 +83,7 @@ impl Search for Post {
 		Self: Sized,
 	{
 		use SearchError::*;
-		let url = format!("https://danbooru.donmai.us/posts.json?limit={limit}&tags={tags}");
+		let url = format!("https://danbooru.donmai.us/posts.json?limit={limit}&tags={tags}+-status:deleted");
 		let result = reqwest::blocking::get(url).map_err(|e| RequestFailed(e))?;
 		let byte_vec = result.bytes().map_err(|_| EmptyResponse).map(|b| b.to_vec())?;
 		let bytes = byte_vec.as_slice();
