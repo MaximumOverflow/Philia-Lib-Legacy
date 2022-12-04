@@ -1,13 +1,14 @@
-use crate::{Post, USER_AGENT};
-use std::future::Future;
+use futures::future::BoxFuture;
+use crate::data::Post;
+use crate::USER_AGENT;
 use reqwest::Error;
 
-pub trait Download
-where
-	Self: Post,
-{
+pub trait Download {
 	fn download(&self) -> Result<Vec<u8>, Error>;
-	fn download_async(&self) -> Box<dyn Future<Output = Result<Vec<u8>, Error>> + '_>;
+}
+
+pub trait DownloadAsync {
+	fn download(&self) -> BoxFuture<Result<Vec<u8>, Error>>;
 }
 
 impl<T: Post> Download for T {
@@ -22,16 +23,17 @@ impl<T: Post> Download for T {
 		let bytes = result.bytes()?;
 		Ok(bytes.to_vec())
 	}
-
-	fn download_async(&self) -> Box<dyn Future<Output = Result<Vec<u8>, Error>> + '_> {
-		Box::new(download_async(self))
-	}
 }
 
-async fn download_async(post: &dyn Post) -> Result<Vec<u8>, Error> {
-	let client = reqwest::ClientBuilder::new().user_agent(USER_AGENT).https_only(false).build().unwrap();
+impl<T: Post> DownloadAsync for T {
+	fn download(&self) -> BoxFuture<Result<Vec<u8>, Error>> {
+		async fn download_async(url: &str) -> Result<Vec<u8>, Error> {
+			let client = reqwest::ClientBuilder::new().user_agent(USER_AGENT).https_only(false).build().unwrap();
+			let result = client.get(url).send().await?;
+			let bytes = result.bytes().await?;
+			Ok(bytes.to_vec())
+		}
 
-	let result = client.get(post.resource_url()).send().await?;
-	let bytes = result.bytes().await?;
-	Ok(bytes.to_vec())
+		Box::pin(download_async(self.resource_url()))
+	}
 }

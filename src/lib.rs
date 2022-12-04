@@ -1,48 +1,33 @@
-mod search;
+mod data;
 mod download;
-pub mod e621;
-pub mod rule34;
-pub mod danbooru;
+pub mod search;
 
-use chrono::Utc;
-use std::any::Any;
-use serde_derive::Deserialize;
-
-pub use search::*;
-pub use download::*;
-pub type Timestamp = chrono::DateTime<Utc>;
-
-pub trait Post: Any + internal_traits::Search {
-	fn id(&self) -> usize;
-	fn md5(&self) -> &str;
-	fn score(&self) -> isize;
-	fn rating(&self) -> Rating;
-	fn resource_url(&self) -> &str;
-	fn tags<'l>(&'l self) -> Box<dyn Iterator<Item = &'l str> + 'l>;
-
-	fn file_name(&self) -> &str {
-		let url = self.resource_url();
-		let start = url.rfind(|c| c == '/')
-			.map(|i| i + 1)
-			.unwrap_or(0);
-		&url[start..]
-	}
+pub mod e621 {
+	pub struct E621;
+	pub use crate::data::e621::*;
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Deserialize)]
-pub enum Rating {
-	#[serde(alias = "g")]
-	#[serde(alias = "general")]
-	General,
-	#[serde(alias = "s")]
-	#[serde(alias = "sensitive")]
-	Sensitive,
-	#[serde(alias = "q")]
-	#[serde(alias = "questionable")]
-	Questionable,
-	#[serde(alias = "e")]
-	#[serde(alias = "explicit")]
-	Explicit,
+pub mod rule34 {
+	pub struct Rule34;
+	pub use crate::data::rule34::*;
 }
 
-const USER_AGENT: &str = const_format::formatcp!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+pub mod danbooru {
+	pub struct Danbooru;
+	pub use crate::data::danbooru::*;
+}
+
+pub mod prelude {
+	pub use crate::e621;
+	pub use crate::rule34;
+	pub use crate::danbooru;
+
+	pub use e621::E621;
+	pub use rule34::Rule34;
+	pub use danbooru::Danbooru;
+	pub use crate::download::Download;
+	pub use crate::data::{Post, GenericPost};
+	pub use crate::search::{BuildSearch, Search, SearchAsync, GenericSearch, GenericSearchAsync};
+}
+
+pub const USER_AGENT: &str = const_format::formatcp!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
