@@ -2,7 +2,7 @@ use chrono::Utc;
 use std::any::Any;
 use std::iter::Map;
 use std::slice::Iter;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use crate::data::internal::EnablePost;
 
 pub mod e621;
@@ -16,6 +16,8 @@ pub enum Rating {
 	#[serde(alias = "g")]
 	#[serde(alias = "general")]
 	General,
+	#[serde(alias = "safe")]
+	Safe,
 	#[serde(alias = "s")]
 	#[serde(alias = "sensitive")]
 	Sensitive,
@@ -34,21 +36,29 @@ pub trait Post: Any + EnablePost + Into<GenericPost> {
 	fn md5(&self) -> &str;
 	fn score(&self) -> isize;
 	fn rating(&self) -> Rating;
-	fn resource_url(&self) -> &str;
+	fn resource_url(&self) -> Option<&str>;
 	fn tags(&self) -> Self::TagIterator<'_>;
 
-	fn file_name(&self) -> &str {
-		let url = self.resource_url();
-		let start = url.rfind(|c| c == '/').map(|i| i + 1).unwrap_or(0);
-		&url[start..]
+	fn file_name(&self) -> Option<&str> {
+		match self.resource_url() {
+			None => None,
+			Some(url) => {
+				let start = url.rfind(|c| c == '/').map(|i| i + 1).unwrap_or(0);
+				Some(&url[start..])
+			}
+		}
 	}
-	
-	fn file_ext(&self) -> &str {
-		let url = self.resource_url();
-		let start = url.rfind(|c| c == '.').map(|i| i + 1).unwrap_or(0);
-		&url[start..]
+
+	fn file_ext(&self) -> Option<&str> {
+		match self.resource_url() {
+			None => None,
+			Some(url) => {
+				let start = url.rfind(|c| c == '.').map(|i| i + 1).unwrap_or(0);
+				Some(&url[start..])
+			}
+		}
 	}
-	
+
 	fn tags_owned(&self) -> Vec<String> {
 		self.tags().map(|t| t.to_string()).collect()
 	}
@@ -65,7 +75,7 @@ pub struct GenericPost {
 }
 
 impl Post for GenericPost {
-	type TagIterator<'l> = Map<Iter<'l, String>, fn(&String)->&str>;
+	type TagIterator<'l> = Map<Iter<'l, String>, fn(&String) -> &str>;
 
 	fn id(&self) -> usize {
 		self.id
@@ -83,8 +93,8 @@ impl Post for GenericPost {
 		self.rating
 	}
 
-	fn resource_url(&self) -> &str {
-		&self.resource_url
+	fn resource_url(&self) -> Option<&str> {
+		Some(&self.resource_url)
 	}
 
 	fn tags(&self) -> Self::TagIterator<'_> {

@@ -1,5 +1,5 @@
 use crate::search::{SearchAsync, Error, Search, SearchBuilder, SearchFuture, SearchResult};
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use crate::e621::{E621, Post};
 use crate::USER_AGENT;
 
@@ -35,7 +35,7 @@ impl SearchAsync for E621 {
 
 			let limit = params.limit;
 			let tags = params.get_joined_tags();
-			let url = format!("https://e621.net/posts.json?limit={limit}&tags={tags}+-status:deleted");
+			let url = format!("https://e621.net/posts.json?limit={limit}&tags={tags}+status:approved");
 			let result = client.get(url).send().await.map_err(RequestFailed)?;
 			let bytes = result.bytes().await.map_err(|_| EmptyResponse).map(|b| b.to_vec())?;
 			deserialize(bytes)

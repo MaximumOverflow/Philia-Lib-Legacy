@@ -1,5 +1,5 @@
 use crate::data::{GenericPost, Rating, Post as PostTrait};
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::str::Split;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -43,8 +43,8 @@ impl PostTrait for Post {
 		self.rating
 	}
 
-	fn resource_url(&self) -> &str {
-		&self.file_url
+	fn resource_url(&self) -> Option<&str> {
+		Some(&self.file_url)
 	}
 
 	fn tags(&self) -> Self::TagIterator<'_> {
@@ -52,15 +52,15 @@ impl PostTrait for Post {
 	}
 }
 
-impl Into<GenericPost> for Post {
-	fn into(self) -> GenericPost {
-		GenericPost {
-			tags: self.tags_owned(),
-			id: self.id,
-			md5: self.hash,
-			score: self.score,
-			rating: self.rating,
-			resource_url: self.file_url,
+impl From<Post> for GenericPost {
+	fn from(post: Post) -> Self {
+		Self {
+			tags: post.tags_owned(),
+			id: post.id,
+			md5: post.hash,
+			score: post.score,
+			rating: post.rating,
+			resource_url: post.file_url,
 		}
 	}
 }

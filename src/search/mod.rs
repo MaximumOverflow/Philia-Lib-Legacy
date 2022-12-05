@@ -27,7 +27,7 @@ pub trait Search: EnableSearch {
 	fn search(&self, params: SearchBuilder) -> SearchResult<Self::Post>;
 }
 
-pub trait SearchAsync: EnableSearch {
+pub trait SearchAsync: Sync + EnableSearch {
 	type Post: Post;
 	fn search_async(&self, params: SearchBuilder) -> SearchFuture<Self::Post>;
 }
@@ -36,7 +36,7 @@ pub trait GenericSearch: EnableSearch {
 	fn search(&self, params: SearchBuilder) -> GenericSearchResult<'_>;
 }
 
-pub trait GenericSearchAsync: EnableSearch {
+pub trait GenericSearchAsync: Sync + EnableSearch {
 	fn search_async(&self, params: SearchBuilder) -> GenericSearchFuture;
 }
 
@@ -58,7 +58,7 @@ impl<T: 'static + SearchAsync + Clone + Send + Sync> GenericSearchAsync for T {
 				Ok(posts) => {
 					let posts = posts.into_iter().map(|p| p.into());
 					Ok(posts.collect())
-				},
+				}
 				Err(err) => Err(err),
 			}
 		})
@@ -187,12 +187,15 @@ impl<T: Search> SearchBuilderFor<'_, T> {
 		self.builder.limit(limit);
 		self
 	}
-	
+
 	pub fn search(self) -> SearchResult<T::Post> {
 		self.builder.search(self.source)
 	}
 
-	pub async fn search_async(self) -> SearchResult<<T as SearchAsync>::Post> where T: SearchAsync {
+	pub async fn search_async(self) -> SearchResult<<T as SearchAsync>::Post>
+	where
+		T: SearchAsync,
+	{
 		self.builder.search_async(self.source).await
 	}
 }

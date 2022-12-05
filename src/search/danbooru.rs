@@ -1,6 +1,6 @@
 use crate::search::{Error, Search, SearchAsync, SearchBuilder, SearchFuture, SearchResult};
 use crate::danbooru::{Danbooru, Post};
-use serde_derive::Deserialize;
+use serde::Deserialize;
 
 impl Search for Danbooru {
 	type Post = Post;

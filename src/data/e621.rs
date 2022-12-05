@@ -1,6 +1,6 @@
 use crate::data::{GenericPost, Post as PostTrait, Rating, Timestamp};
 use std::collections::HashMap;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::slice::Iter;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -9,8 +9,8 @@ pub struct Post {
 	pub created_at: Timestamp,
 	pub updated_at: Timestamp,
 	pub file: File,
-	pub preview: Preview,
-	pub sample: Sample,
+	pub preview: Option<Preview>,
+	pub sample: Option<Sample>,
 	pub score: Score,
 	pub tags: Tags,
 	pub locked_tags: Vec<String>,
@@ -32,7 +32,7 @@ pub struct Post {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct File {
-	pub url: String,
+	pub url: Option<String>, //TODO Fix null errors
 	pub ext: String,
 	pub md5: String,
 	pub size: usize,
@@ -42,7 +42,7 @@ pub struct File {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Preview {
-	pub url: String,
+	pub url: Option<String>,
 	pub width: usize,
 	pub height: usize,
 }
@@ -50,7 +50,7 @@ pub struct Preview {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Sample {
 	pub has: bool,
-	pub url: String,
+	pub url: Option<String>,
 	pub width: usize,
 	pub height: usize,
 	#[serde(default = "Default::default")]
@@ -59,6 +59,7 @@ pub struct Sample {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Alternative {
+	#[serde(default = "Default::default")]
 	pub url: String,
 	pub width: usize,
 	pub height: usize,
@@ -121,8 +122,11 @@ impl PostTrait for Post {
 		self.rating
 	}
 
-	fn resource_url(&self) -> &str {
-		&self.file.url
+	fn resource_url(&self) -> Option<&str> {
+		match &self.file.url {
+			None => None,
+			Some(url) => Some(url.as_str()),
+		}
 	}
 
 	fn tags(&self) -> Self::TagIterator<'_> {
@@ -141,15 +145,15 @@ impl PostTrait for Post {
 	}
 }
 
-impl Into<GenericPost> for Post {
-	fn into(self) -> GenericPost {
-		GenericPost {
-			tags: self.tags_owned(),
-			id: self.id,
-			md5: self.file.md5,
-			rating: self.rating,
-			score: self.score.total,
-			resource_url: self.file.url,
+impl From<Post> for GenericPost {
+	fn from(post: Post) -> Self {
+		Self {
+			tags: post.tags_owned(),
+			id: post.id,
+			md5: post.file.md5,
+			rating: post.rating,
+			score: post.score.total,
+			resource_url: post.file.url.unwrap_or_default(),
 		}
 	}
 }
