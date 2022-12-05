@@ -6,9 +6,10 @@ impl Search for Rule34 {
 
 	fn search(&self, params: SearchBuilder) -> SearchResult<Self::Post> {
 		use Error::*;
+		let page = params.page;
 		let limit = params.limit;
 		let tags = params.get_joined_tags();
-		let url = format!("https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&json=1&limit={limit}&tags={tags}+-status:deleted");
+		let url = format!("https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&json=1&pid={page}&limit={limit}&tags={tags}");
 		let result = reqwest::blocking::get(url).map_err(RequestFailed)?;
 		let bytes = result.bytes().map_err(|_| EmptyResponse).map(|b| b.to_vec())?;
 		deserialize(bytes)
@@ -21,9 +22,10 @@ impl SearchAsync for Rule34 {
 	fn search_async(&self, params: SearchBuilder) -> SearchFuture<Self::Post> {
 		async fn search_async(params: SearchBuilder) -> Result<Vec<Post>, Error> {
 			use Error::*;
+			let page = params.page;
 			let limit = params.limit;
 			let tags = params.get_joined_tags();
-			let url = format!("https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&json=1&limit={limit}&tags={tags}+-status:deleted");
+			let url = format!("https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&json=1&pid={page}&limit={limit}&tags={tags}");
 			let result = reqwest::get(url).await.map_err(RequestFailed)?;
 			let bytes = result.bytes().await.map_err(|_| EmptyResponse).map(|b| b.to_vec())?;
 			deserialize(bytes)
@@ -39,7 +41,9 @@ fn deserialize(byte_vec: Vec<u8>) -> Result<Vec<Post>, Error> {
 	match bytes {
 		//['[', .., ']'] | ['[', .., ']', '\n']
 		[0x5B, .., 0x5D] | [0x5B, .., 0x5D, 0x0A] => {
-			let posts = serde_json::from_slice::<Vec<Post>>(bytes).map_err(JsonDeserializationFailed)?;
+			let posts = serde_json::from_slice::<Vec<Post>>(bytes)
+				.map_err(|err| Error::from((bytes, err)))?;
+			
 			Ok(posts)
 		}
 

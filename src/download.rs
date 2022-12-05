@@ -1,6 +1,5 @@
-use futures::future::BoxFuture;
+use crate::{BoxFuture, USER_AGENT};
 use crate::data::Post;
-use crate::USER_AGENT;
 
 pub trait Download {
 	fn download(&self) -> Result<Vec<u8>, Error>;
@@ -36,7 +35,7 @@ impl<T: Post> Download for T {
 
 impl<T: Post> DownloadAsync for T {
 	fn download_async(&self) -> BoxFuture<Result<Vec<u8>, Error>> {
-		async fn download_async(url: Option<&str>) -> Result<Vec<u8>, Error> {
+		async fn download_async(url: Option<String>) -> Result<Vec<u8>, Error> {
 			let Some(url) = url else {
 				return Err(Error::MissingRemoteResource)
 			};
@@ -46,7 +45,8 @@ impl<T: Post> DownloadAsync for T {
 			let bytes = result.bytes().await.map_err(Error::ResponseError)?;
 			Ok(bytes.to_vec())
 		}
-
-		Box::pin(download_async(self.resource_url()))
+		
+		let url = self.resource_url().map(String::from);
+		Box::pin(download_async(url))
 	}
 }

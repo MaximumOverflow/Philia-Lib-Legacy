@@ -1,6 +1,6 @@
 use crate::search::{SearchAsync, Error, Search, SearchBuilder, SearchFuture, SearchResult};
-use serde::Deserialize;
 use crate::e621::{E621, Post};
+use serde::Deserialize;
 use crate::USER_AGENT;
 
 impl Search for E621 {
@@ -15,9 +15,10 @@ impl Search for E621 {
 			.build()
 			.unwrap();
 
+		let page = params.page;
 		let limit = params.limit;
 		let tags = params.get_joined_tags();
-		let url = format!("https://e621.net/posts.json?limit={limit}&tags={tags}+-status:deleted");
+		let url = format!("https://e621.net/posts.json?page={page}&limit={limit}&tags={tags}+-status:deleted");
 		let result = client.get(url).send().map_err(RequestFailed)?;
 		let bytes = result.bytes().map_err(|_| EmptyResponse).map(|b| b.to_vec())?;
 		deserialize(bytes)
@@ -33,9 +34,10 @@ impl SearchAsync for E621 {
 
 			let client = reqwest::ClientBuilder::new().user_agent(USER_AGENT).https_only(false).build().unwrap();
 
+			let page = params.page;
 			let limit = params.limit;
 			let tags = params.get_joined_tags();
-			let url = format!("https://e621.net/posts.json?limit={limit}&tags={tags}+status:approved");
+			let url = format!("https://e621.net/posts.json?page={page}&limit={limit}&tags={tags}+status:approved");
 			let result = client.get(url).send().await.map_err(RequestFailed)?;
 			let bytes = result.bytes().await.map_err(|_| EmptyResponse).map(|b| b.to_vec())?;
 			deserialize(bytes)
@@ -56,7 +58,9 @@ fn deserialize(byte_vec: Vec<u8>) -> Result<Vec<Post>, Error> {
 				posts: Vec<Post>,
 			}
 
-			let posts = serde_json::from_slice::<Posts>(bytes).map_err(JsonDeserializationFailed)?;
+			let posts = serde_json::from_slice::<Posts>(bytes)
+				.map_err(|err| Error::from((bytes, err)))?;
+			
 			Ok(posts.posts)
 		}
 

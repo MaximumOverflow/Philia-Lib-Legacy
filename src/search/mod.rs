@@ -2,9 +2,9 @@ mod e621;
 mod rule34;
 mod danbooru;
 
-use crate::data::{GenericPost, Post};
+use crate::BoxFuture;
 use std::collections::HashSet;
-use futures::future::BoxFuture;
+use crate::data::{GenericPost, Post};
 use crate::search::internal::EnableSearch;
 
 #[derive(Debug)]
@@ -14,7 +14,10 @@ pub enum Error {
 	InvalidResponse(String),
 	InvalidResponseBytes(Vec<u8>),
 	RequestFailed(reqwest::Error),
-	JsonDeserializationFailed(serde_json::Error),
+	JsonDeserializationFailed {
+		nearby_json: String,
+		error: serde_json::Error,
+	},
 }
 
 type SearchResult<T> = Result<Vec<T>, Error>;
@@ -67,6 +70,7 @@ impl<T: 'static + SearchAsync + Clone + Send + Sync> GenericSearchAsync for T {
 
 #[derive(Debug, Default)]
 pub struct SearchBuilder {
+	page: usize,
 	limit: usize,
 	include: HashSet<String>,
 	exclude: HashSet<String>,
@@ -108,6 +112,11 @@ impl SearchBuilder {
 
 	pub fn limit(&mut self, limit: usize) -> &mut Self {
 		self.limit = limit;
+		self
+	}
+
+	pub fn page(&mut self, page: usize) -> &mut Self {
+		self.page = page;
 		self
 	}
 
@@ -188,6 +197,11 @@ impl<T: Search> SearchBuilderFor<'_, T> {
 		self
 	}
 
+	pub fn page(&mut self, page: usize) -> &mut Self {
+		self.builder.page(page);
+		self
+	}
+
 	pub fn search(self) -> SearchResult<T::Post> {
 		self.builder.search(self.source)
 	}
@@ -212,6 +226,21 @@ impl<T: Search> BuildSearch for T {
 		SearchBuilderFor {
 			source: self,
 			builder: SearchBuilder::default(),
+		}
+	}
+}
+
+impl From<(&[u8], serde_json::Error)> for Error {
+	fn from((bytes, error): (&[u8], serde_json::Error)) -> Self {
+		let text = std::str::from_utf8(bytes).unwrap();
+		
+		let start = error.column().checked_sub(16).unwrap_or_default();
+		let end = error.column().checked_add(16).unwrap_or(text.len());
+		let nearby_json = &text[start..end];
+		
+		Error::JsonDeserializationFailed {
+			nearby_json: nearby_json.to_string(),
+			error,
 		}
 	}
 }

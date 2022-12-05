@@ -33,4 +33,5 @@ pub mod prelude {
 	pub use crate::search::{BuildSearch, Search, SearchAsync, GenericSearch, GenericSearchAsync};
 }
 
+type BoxFuture<'l, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + Send + 'l>>;
 pub const USER_AGENT: &str = const_format::formatcp!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
