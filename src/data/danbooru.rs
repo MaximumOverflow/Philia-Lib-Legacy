@@ -1,14 +1,15 @@
-use std::str::Split;
-use crate::data::{Rating, Timestamp};
+use crate::data::{GenericPost, Rating, Timestamp, Post as PostTrait};
 use serde_derive::Deserialize;
+use std::str::Split;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Post {
 	pub id: usize,
 	pub created_at: Timestamp,
 	pub uploader_id: usize,
 	pub score: isize,
 	pub source: String,
+	#[serde(default = "Default::default")]
 	pub md5: String,
 	pub last_comment_bumped_at: Option<Timestamp>,
 	pub rating: Rating,
@@ -41,8 +42,11 @@ pub struct Post {
 	pub tag_string_copyright: String,
 	pub tag_string_artist: String,
 	pub tag_string_meta: String,
+	#[serde(default = "Default::default")]
 	pub file_url: String,
+	#[serde(default = "Default::default")]
 	pub large_file_url: String,
+	#[serde(default = "Default::default")]
 	pub preview_file_url: String,
 }
 
@@ -68,7 +72,7 @@ impl Post {
 	}
 }
 
-impl crate::data::Post for Post {
+impl PostTrait for Post {
 	type TagIterator<'l> = Split<'l, fn(char) -> bool>;
 
 	fn id(&self) -> usize {
@@ -93,5 +97,18 @@ impl crate::data::Post for Post {
 
 	fn tags(&self) -> Self::TagIterator<'_> {
 		self.tag_string.split(|c| c == ' ')
+	}
+}
+
+impl Into<GenericPost> for Post {
+	fn into(self) -> GenericPost {
+		GenericPost {
+			tags: self.tags_owned(),
+			id: self.id,
+			md5: self.md5,
+			score: self.score,
+			rating: self.rating,
+			resource_url: self.file_url,
+		}
 	}
 }

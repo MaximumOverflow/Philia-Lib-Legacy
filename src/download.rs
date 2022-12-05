@@ -8,7 +8,7 @@ pub trait Download {
 }
 
 pub trait DownloadAsync {
-	fn download(&self) -> BoxFuture<Result<Vec<u8>, Error>>;
+	fn download_async(&self) -> BoxFuture<Result<Vec<u8>, Error>>;
 }
 
 impl<T: Post> Download for T {
@@ -26,7 +26,7 @@ impl<T: Post> Download for T {
 }
 
 impl<T: Post> DownloadAsync for T {
-	fn download(&self) -> BoxFuture<Result<Vec<u8>, Error>> {
+	fn download_async(&self) -> BoxFuture<Result<Vec<u8>, Error>> {
 		async fn download_async(url: &str) -> Result<Vec<u8>, Error> {
 			let client = reqwest::ClientBuilder::new().user_agent(USER_AGENT).https_only(false).build().unwrap();
 			let result = client.get(url).send().await?;

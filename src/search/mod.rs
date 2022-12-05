@@ -2,10 +2,9 @@ mod e621;
 mod rule34;
 mod danbooru;
 
+use crate::data::{GenericPost, Post};
 use std::collections::HashSet;
 use futures::future::BoxFuture;
-use std::ops::{Deref, DerefMut};
-use crate::data::{GenericPostCollection, Post};
 use crate::search::internal::EnableSearch;
 
 #[derive(Debug)]
@@ -20,7 +19,7 @@ pub enum Error {
 
 type SearchResult<T> = Result<Vec<T>, Error>;
 type SearchFuture<T> = BoxFuture<'static, SearchResult<T>>;
-type GenericSearchResult<'l> = Result<Box<dyn GenericPostCollection<'l> + 'l>, Error>;
+type GenericSearchResult<'l> = Result<Vec<GenericPost>, Error>;
 type GenericSearchFuture<'l> = BoxFuture<'static, GenericSearchResult<'l>>;
 
 pub trait Search: EnableSearch {
@@ -30,7 +29,7 @@ pub trait Search: EnableSearch {
 
 pub trait SearchAsync: EnableSearch {
 	type Post: Post;
-	fn search(&self, params: SearchBuilder) -> SearchFuture<Self::Post>;
+	fn search_async(&self, params: SearchBuilder) -> SearchFuture<Self::Post>;
 }
 
 pub trait GenericSearch: EnableSearch {
@@ -38,24 +37,28 @@ pub trait GenericSearch: EnableSearch {
 }
 
 pub trait GenericSearchAsync: EnableSearch {
-	fn search(&self, params: SearchBuilder) -> GenericSearchFuture;
+	fn search_async(&self, params: SearchBuilder) -> GenericSearchFuture;
 }
 
 impl<T: Search> GenericSearch for T {
 	fn search(&self, params: SearchBuilder) -> GenericSearchResult<'_> {
-		Ok(Box::new(self.search(params)?))
+		let posts = self.search(params)?.into_iter().map(|p| p.into());
+		Ok(posts.collect())
 	}
 }
 
 impl<T: 'static + SearchAsync + Clone + Send + Sync> GenericSearchAsync for T {
-	fn search(&self, params: SearchBuilder) -> GenericSearchFuture
+	fn search_async(&self, params: SearchBuilder) -> GenericSearchFuture
 	where
 		Self: Clone + Send + Sync,
 	{
 		let this = self.clone();
 		Box::pin(async move {
-			match this.search(params).await {
-				Ok(val) => Ok(GenericPostCollection::to_box(val)),
+			match this.search_async(params).await {
+				Ok(posts) => {
+					let posts = posts.into_iter().map(|p| p.into());
+					Ok(posts.collect())
+				},
 				Err(err) => Err(err),
 			}
 		})
@@ -117,11 +120,11 @@ impl SearchBuilder {
 	}
 
 	pub async fn search_async<T: SearchAsync>(self, src: &T) -> SearchResult<T::Post> {
-		src.search(self).await
+		src.search_async(self).await
 	}
 
 	pub async fn dyn_search_async(self, src: &dyn GenericSearchAsync) -> GenericSearchResult {
-		src.search(self).await
+		src.search_async(self).await
 	}
 
 	pub(crate) fn get_joined_tags(&self) -> String {
@@ -159,29 +162,37 @@ pub struct SearchBuilderFor<'l, T: Search> {
 	builder: SearchBuilder,
 }
 
-impl<T: Search> Deref for SearchBuilderFor<'_, T> {
-	type Target = SearchBuilder;
-
-	fn deref(&self) -> &Self::Target {
-		&self.builder
-	}
-}
-
-impl<T: Search> DerefMut for SearchBuilderFor<'_, T> {
-	fn deref_mut(&mut self) -> &mut Self::Target {
-		&mut self.builder
-	}
-}
-
 impl<T: Search> SearchBuilderFor<'_, T> {
+	pub fn include_tag(&mut self, tag: &str) -> &mut Self {
+		self.builder.include_tag(tag);
+		self
+	}
+
+	pub fn exclude_tag(&mut self, tag: &str) -> &mut Self {
+		self.builder.exclude_tag(tag);
+		self
+	}
+
+	pub fn include_tags(&mut self, tags: impl IntoIterator<Item = impl AsRef<str>>) -> &mut Self {
+		self.builder.include_tags(tags);
+		self
+	}
+
+	pub fn exclude_tags(&mut self, tags: impl IntoIterator<Item = impl AsRef<str>>) -> &mut Self {
+		self.builder.exclude_tags(tags);
+		self
+	}
+
+	pub fn limit(&mut self, limit: usize) -> &mut Self {
+		self.builder.limit(limit);
+		self
+	}
+	
 	pub fn search(self) -> SearchResult<T::Post> {
 		self.builder.search(self.source)
 	}
 
-	pub async fn search_async(self) -> SearchResult<<T as SearchAsync>::Post>
-	where
-		T: SearchAsync,
-	{
+	pub async fn search_async(self) -> SearchResult<<T as SearchAsync>::Post> where T: SearchAsync {
 		self.builder.search_async(self.source).await
 	}
 }

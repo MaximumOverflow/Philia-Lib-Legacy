@@ -18,7 +18,7 @@ impl Search for Rule34 {
 impl SearchAsync for Rule34 {
 	type Post = Post;
 
-	fn search(&self, params: SearchBuilder) -> SearchFuture<Self::Post> {
+	fn search_async(&self, params: SearchBuilder) -> SearchFuture<Self::Post> {
 		async fn search_async(params: SearchBuilder) -> Result<Vec<Post>, Error> {
 			use Error::*;
 			let limit = params.limit;

@@ -27,7 +27,7 @@ impl Search for E621 {
 impl SearchAsync for E621 {
 	type Post = Post;
 
-	fn search(&self, params: SearchBuilder) -> SearchFuture<Self::Post> {
+	fn search_async(&self, params: SearchBuilder) -> SearchFuture<Self::Post> {
 		async fn search_async(params: SearchBuilder) -> Result<Vec<Post>, Error> {
 			use Error::*;
 

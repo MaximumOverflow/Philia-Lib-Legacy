@@ -1,9 +1,9 @@
-use crate::data::{Rating, Timestamp};
+use crate::data::{GenericPost, Post as PostTrait, Rating, Timestamp};
 use std::collections::HashMap;
 use serde_derive::Deserialize;
 use std::slice::Iter;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Post {
 	pub id: usize,
 	pub created_at: Timestamp,
@@ -30,7 +30,7 @@ pub struct Post {
 	pub duration: Option<f32>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct File {
 	pub url: String,
 	pub ext: String,
@@ -40,14 +40,14 @@ pub struct File {
 	pub height: usize,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Preview {
 	pub url: String,
 	pub width: usize,
 	pub height: usize,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Sample {
 	pub has: bool,
 	pub url: String,
@@ -57,21 +57,21 @@ pub struct Sample {
 	pub alternatives: HashMap<String, Alternative>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Alternative {
 	pub url: String,
 	pub width: usize,
 	pub height: usize,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Score {
 	pub up: isize,
 	pub down: isize,
 	pub total: isize,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Tags {
 	pub meta: Vec<String>,
 	pub lore: Vec<String>,
@@ -83,7 +83,7 @@ pub struct Tags {
 	pub copyright: Vec<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Flags {
 	pub pending: bool,
 	pub flagged: bool,
@@ -94,7 +94,7 @@ pub struct Flags {
 	pub comment_disabled: bool,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Relationships {
 	pub parent_id: Option<usize>,
 	pub has_children: bool,
@@ -102,7 +102,7 @@ pub struct Relationships {
 	pub children: Vec<usize>,
 }
 
-impl crate::data::Post for Post {
+impl PostTrait for Post {
 	type TagIterator<'l> = TagIterator<'l>;
 
 	fn id(&self) -> usize {
@@ -137,6 +137,19 @@ impl crate::data::Post for Post {
 				self.tags.character.iter(),
 				self.tags.copyright.iter(),
 			],
+		}
+	}
+}
+
+impl Into<GenericPost> for Post {
+	fn into(self) -> GenericPost {
+		GenericPost {
+			tags: self.tags_owned(),
+			id: self.id,
+			md5: self.file.md5,
+			rating: self.rating,
+			score: self.score.total,
+			resource_url: self.file.url,
 		}
 	}
 }

@@ -1,8 +1,8 @@
-use std::str::Split;
+use crate::data::{GenericPost, Rating, Post as PostTrait};
 use serde_derive::Deserialize;
-use crate::data::Rating;
+use std::str::Split;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Post {
 	pub id: usize,
 	pub directory: usize,
@@ -24,7 +24,7 @@ pub struct Post {
 	pub preview_url: String,
 }
 
-impl crate::data::Post for Post {
+impl PostTrait for Post {
 	type TagIterator<'l> = Split<'l, fn(char) -> bool>;
 
 	fn id(&self) -> usize {
@@ -49,5 +49,18 @@ impl crate::data::Post for Post {
 
 	fn tags(&self) -> Self::TagIterator<'_> {
 		self.tags.split(|c| c == ' ')
+	}
+}
+
+impl Into<GenericPost> for Post {
+	fn into(self) -> GenericPost {
+		GenericPost {
+			tags: self.tags_owned(),
+			id: self.id,
+			md5: self.hash,
+			score: self.score,
+			rating: self.rating,
+			resource_url: self.file_url,
+		}
 	}
 }

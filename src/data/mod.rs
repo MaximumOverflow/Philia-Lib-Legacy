@@ -1,5 +1,7 @@
 use chrono::Utc;
 use std::any::Any;
+use std::iter::Map;
+use std::slice::Iter;
 use serde_derive::Deserialize;
 use crate::data::internal::EnablePost;
 
@@ -25,7 +27,7 @@ pub enum Rating {
 	Explicit,
 }
 
-pub trait Post: Any + EnablePost {
+pub trait Post: Any + EnablePost + Into<GenericPost> {
 	type TagIterator<'l>: Iterator<Item = &'l str>;
 
 	fn id(&self) -> usize;
@@ -40,62 +42,53 @@ pub trait Post: Any + EnablePost {
 		let start = url.rfind(|c| c == '/').map(|i| i + 1).unwrap_or(0);
 		&url[start..]
 	}
+	
+	fn file_ext(&self) -> &str {
+		let url = self.resource_url();
+		let start = url.rfind(|c| c == '.').map(|i| i + 1).unwrap_or(0);
+		&url[start..]
+	}
+	
+	fn tags_owned(&self) -> Vec<String> {
+		self.tags().map(|t| t.to_string()).collect()
+	}
 }
 
-pub trait GenericPost: Any + EnablePost {
-	fn id(&self) -> usize;
-	fn md5(&self) -> &str;
-	fn score(&self) -> isize;
-	fn rating(&self) -> Rating;
-	fn file_name(&self) -> &str;
-	fn resource_url(&self) -> &str;
-	fn tags(&self) -> Box<dyn Iterator<Item = &str> + '_>;
+#[derive(Debug, Clone)]
+pub struct GenericPost {
+	pub id: usize,
+	pub md5: String,
+	pub score: isize,
+	pub rating: Rating,
+	pub tags: Vec<String>,
+	pub resource_url: String,
 }
 
-impl<T: Post> GenericPost for T {
+impl Post for GenericPost {
+	type TagIterator<'l> = Map<Iter<'l, String>, fn(&String)->&str>;
+
 	fn id(&self) -> usize {
-		self.id()
+		self.id
 	}
 
 	fn md5(&self) -> &str {
-		self.md5()
+		&self.md5
 	}
 
 	fn score(&self) -> isize {
-		self.score()
+		self.score
 	}
 
 	fn rating(&self) -> Rating {
-		self.rating()
-	}
-
-	fn file_name(&self) -> &str {
-		self.file_name()
+		self.rating
 	}
 
 	fn resource_url(&self) -> &str {
-		self.resource_url()
+		&self.resource_url
 	}
 
-	fn tags(&self) -> Box<dyn Iterator<Item = &str> + '_> {
-		Box::new(self.tags())
-	}
-}
-
-pub trait GenericPostCollection<'l> {
-	fn iter(&'l self) -> Box<dyn Iterator<Item = &'l dyn GenericPost> + 'l>;
-	fn to_box(val: Self) -> Box<dyn GenericPostCollection<'l>>
-	where
-		Self: Sized;
-}
-
-impl<'l, T: Post> GenericPostCollection<'l> for Vec<T> {
-	fn iter(&'l self) -> Box<dyn Iterator<Item = &'l dyn GenericPost> + 'l> {
-		Box::new(self.as_slice().iter().map(|p| p as &'l dyn GenericPost))
-	}
-
-	fn to_box(val: Self) -> Box<dyn GenericPostCollection<'l>> {
-		Box::new(val)
+	fn tags(&self) -> Self::TagIterator<'_> {
+		self.tags.iter().map(|t| t.as_str())
 	}
 }
 
@@ -104,4 +97,5 @@ mod internal {
 	impl EnablePost for crate::e621::Post {}
 	impl EnablePost for crate::rule34::Post {}
 	impl EnablePost for crate::danbooru::Post {}
+	impl EnablePost for crate::data::GenericPost {}
 }
