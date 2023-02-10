@@ -2,23 +2,10 @@ mod e621;
 mod rule34;
 mod danbooru;
 
-use crate::BoxFuture;
+use crate::{BoxFuture, Error};
 use std::collections::HashSet;
 use crate::data::{GenericPost, Post};
 use crate::search::internal::EnableSearch;
-
-#[derive(Debug)]
-pub enum Error {
-	EmptyResponse,
-	Generic(String),
-	InvalidResponse(String),
-	InvalidResponseBytes(Vec<u8>),
-	RequestFailed(reqwest::Error),
-	JsonDeserializationFailed {
-		nearby_json: String,
-		error: serde_json::Error,
-	},
-}
 
 type SearchResult<T> = Result<Vec<T>, Error>;
 type SearchFuture<T> = BoxFuture<'static, SearchResult<T>>;
@@ -226,21 +213,6 @@ impl<T: Search> BuildSearch for T {
 		SearchBuilderFor {
 			source: self,
 			builder: SearchBuilder::default(),
-		}
-	}
-}
-
-impl From<(&[u8], serde_json::Error)> for Error {
-	fn from((bytes, error): (&[u8], serde_json::Error)) -> Self {
-		let text = std::str::from_utf8(bytes).unwrap();
-		
-		let start = error.column().checked_sub(16).unwrap_or_default();
-		let end = error.column().checked_add(16).unwrap_or(text.len());
-		let nearby_json = &text[start..end];
-		
-		Error::JsonDeserializationFailed {
-			nearby_json: nearby_json.to_string(),
-			error,
 		}
 	}
 }

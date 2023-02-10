@@ -31,6 +31,19 @@ pub struct Post {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct Tag {
+	pub id: usize,
+	pub name: String,
+	pub post_count: usize,
+	pub related_tags: String,
+	pub related_tags_updated_at: Timestamp,
+	pub category: usize,
+	pub is_locked: bool,
+	pub created_at: Timestamp,
+	pub updated_at: Timestamp,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct File {
 	pub url: Option<String>, //TODO Fix null errors
 	pub ext: String,
@@ -133,12 +146,12 @@ impl PostTrait for Post {
 		TagIterator {
 			current: 0,
 			iterators: [
-				self.tags.meta.iter(),
-				self.tags.lore.iter(),
-				self.tags.artist.iter(),
-				self.tags.general.iter(),
 				self.tags.species.iter(),
 				self.tags.character.iter(),
+				self.tags.general.iter(),
+				self.tags.artist.iter(),
+				self.tags.meta.iter(),
+				self.tags.lore.iter(),
 				self.tags.copyright.iter(),
 			],
 		}
