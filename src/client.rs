@@ -1,4 +1,4 @@
-use crate::source::{search, Source};
+use crate::source::{search, Source, search::Order};
 use crate::data::{Post, Tag, Tags};
 use std::collections::HashMap;
 use serde_json::{Map, Value};
@@ -39,10 +39,12 @@ impl Client {
         &self,
         page: usize,
         limit: usize,
+		order: Order,
         include: impl Iterator<Item=String>,
         exclude: impl Iterator<Item=String>,
     ) -> Result<Vec<Post>, String> {
-        let search_url = self.get_search_url(page, limit, include, exclude);
+        let search_url = self.get_search_url(page, limit, order, include, exclude);
+		println!("{search_url}");
         let result = self.make_request(search_url)?;
         self.parse_search_results(result)
     }
@@ -51,10 +53,11 @@ impl Client {
         &self,
         page: usize,
         limit: usize,
+		order: Order,
         include: impl Iterator<Item=String>,
         exclude: impl Iterator<Item=String>,
     ) -> Result<Vec<Post>, String> {
-        let search_url = self.get_search_url(page, limit, include, exclude);
+        let search_url = self.get_search_url(page, limit, order, include, exclude);
         let result = self.make_async_request(search_url).await?;
         self.parse_search_results(result)
     }
@@ -148,26 +151,38 @@ impl Client {
         &self,
         page: usize,
         limit: usize,
-        mut include: impl Iterator<Item=String>,
+		order: Order,
+       	include: impl Iterator<Item=String>,
         exclude: impl Iterator<Item=String>,
     ) -> String {
         let tags = {
             let mut tags = String::new();
 			
-			if let Some(tag) = include.next() {
-				tags.push_str(&tag);
-			}
 			for tag in include {
-				tags.push('+');
+				if !tags.is_empty() {
+					tags.push('+');
+				}
+				
 				tags.push_str(&tag);
 			}
 			
             for tag in exclude {
-                tags.push('+');
+				if !tags.is_empty() {
+					tags.push('+');
+				}
+				
                 tags.push('-');
                 tags.push_str(&tag);
             }
 
+			if let Some(order) = self.source.search.order.get(&order) {
+				if !tags.is_empty() {
+					tags.push('+');
+				}
+				
+				tags.push_str(&order);
+			}
+			
             tags
         };
 

@@ -12,6 +12,14 @@ pub mod search {
 	use std::collections::HashMap;
 	use crate::data::Rating;
 
+	#[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
+	pub enum Order {
+		Newest,
+		Oldest,
+		MostLiked,
+		LeastLiked,
+	}
+
 	#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 	pub struct Schema {
 		pub base_url: String,
@@ -20,6 +28,7 @@ pub mod search {
 		pub result_key: Option<String>,
 		pub post: PostSchema,
 		pub parameters: ParameterSchema,
+		pub order: HashMap<Order, String>,
 	}
 
 	#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]

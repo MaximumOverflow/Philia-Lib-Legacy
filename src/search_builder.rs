@@ -1,3 +1,4 @@
+use crate::source::search::Order;
 use std::collections::HashSet;
 use crate::client::Client;
 use crate::data::Post;
@@ -8,6 +9,7 @@ pub struct SearchBuilder<'l> {
 	
 	page: usize,
 	limit: usize,
+	order: Order,
 	include: HashSet<String>,
 	exclude: HashSet<String>,
 }
@@ -18,6 +20,7 @@ impl <'l> SearchBuilder<'l> {
 			client,
 			page: 1,
 			limit: 16,
+			order: Order::Newest,
 			include: Default::default(),
 			exclude: Default::default(),
 		}
@@ -56,6 +59,11 @@ impl <'l> SearchBuilder<'l> {
 		self
 	}
 
+	pub fn order(&mut self, order: Order) -> &mut Self {
+		self.order = order;
+		self
+	}
+
 	pub fn limit(&mut self, limit: usize) -> &mut Self {
 		self.limit = limit;
 		self
@@ -70,6 +78,7 @@ impl <'l> SearchBuilder<'l> {
 		self.client.search(
 			self.page, 
 			self.limit, 
+			self.order,
 			self.include.into_iter(), 
 			self.exclude.into_iter(),
 		)
@@ -79,6 +88,7 @@ impl <'l> SearchBuilder<'l> {
 		self.client.search_async(
 			self.page,
 			self.limit,
+			self.order,
 			self.include.into_iter(),
 			self.exclude.into_iter(),
 		).await

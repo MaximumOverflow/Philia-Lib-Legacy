@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use lazy_static::lazy_static;
 use crate::data::Rating;
+use crate::prelude::Order;
 use crate::source::*;
 
 lazy_static! {
@@ -41,6 +42,13 @@ lazy_static! {
 					("explicit".into(), Rating::Explicit),
 				])
 			},
+			
+			order: HashMap::from([
+				(Order::Newest, "sort:id_desc".into()),
+				(Order::Oldest, "sort:id_asc".into()),
+				(Order::MostLiked, "sort:score_desc".into()),
+				(Order::LeastLiked, "sort:score_asc".into()),
+			])
 		},
 		
 		tag_list: None
@@ -52,6 +60,12 @@ lazy_static! {
 		search: search::Schema {
 			base_url: "https://e621.net/posts.json?".into(),
 			result_key: Some("posts".into()),
+			
+			parameters: search::ParameterSchema {
+				tags: "tags".into(),
+				page: "page".into(),
+				limit: "limit".into(),
+			},
 
 			tag_separator: '+',
 			tag_exclusion_prefix: '-',
@@ -85,12 +99,13 @@ lazy_static! {
 					("e".into(), Rating::Explicit),
 				])
 			},
-
-			parameters: search::ParameterSchema {
-				tags: "tags".into(),
-				page: "page".into(),
-				limit: "limit".into(),
-			},
+			
+			order: HashMap::from([
+				(Order::Newest, "order:id_desc".into()),
+				(Order::Oldest, "order:id_asc".into()),
+				(Order::MostLiked, "order:score_desc".into()),
+				(Order::LeastLiked, "order:score_asc".into()),
+			])
 		},
 		
 		tag_list: Some(
@@ -114,9 +129,17 @@ lazy_static! {
 		name: "Danbooru".into(),
 		search: search::Schema {
 			base_url: "https://danbooru.donmai.us/posts.json?".into(),
+			result_key: None,
+			
+			parameters: search::ParameterSchema {
+				tags: "tags".into(),
+				page: "page".into(),
+				limit: "limit".into(),
+			},
+			
 			tag_separator: '+',
 			tag_exclusion_prefix: '-',
-			result_key: None,
+			
 			post: search::PostSchema {
 				id: "id".into(),
 				hash: "md5".into(),
@@ -144,11 +167,12 @@ lazy_static! {
 				}
 			},
 			
-			parameters: search::ParameterSchema {
-				tags: "tags".into(),
-				page: "page".into(),
-				limit: "limit".into(),
-			},
+			order: HashMap::from([
+				(Order::Oldest, "order:id".into()),
+				(Order::Newest, "order:id_desc".into()),
+				(Order::MostLiked, "order:score".into()),
+				(Order::LeastLiked, "order:score_asc".into()),
+			])
 		},
 		
 		tag_list: Some(
