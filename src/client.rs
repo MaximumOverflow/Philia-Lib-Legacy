@@ -44,7 +44,6 @@ impl Client {
         exclude: impl Iterator<Item=String>,
     ) -> Result<Vec<Post>, String> {
         let search_url = self.get_search_url(page, limit, order, include, exclude);
-		println!("{search_url}");
         let result = self.make_request(search_url)?;
         self.parse_search_results(result)
     }
@@ -58,7 +57,7 @@ impl Client {
         exclude: impl Iterator<Item=String>,
     ) -> Result<Vec<Post>, String> {
         let search_url = self.get_search_url(page, limit, order, include, exclude);
-        let result = self.make_async_request(search_url).await?;
+		let result = self.make_async_request(search_url).await?;
         self.parse_search_results(result)
     }
 
@@ -157,31 +156,21 @@ impl Client {
     ) -> String {
         let tags = {
             let mut tags = String::new();
+
+			if let Some(order) = self.source.search.order.get(&order) {
+				tags.push_str(&order);
+			}
 			
 			for tag in include {
-				if !tags.is_empty() {
-					tags.push('+');
-				}
-				
+				tags.push('+');
 				tags.push_str(&tag);
 			}
 			
             for tag in exclude {
-				if !tags.is_empty() {
-					tags.push('+');
-				}
-				
+				tags.push('+');
                 tags.push('-');
                 tags.push_str(&tag);
             }
-
-			if let Some(order) = self.source.search.order.get(&order) {
-				if !tags.is_empty() {
-					tags.push('+');
-				}
-				
-				tags.push_str(&order);
-			}
 			
             tags
         };
@@ -191,7 +180,7 @@ impl Client {
         search_url.push_str(&format!("{}={}", params.page, page));
         search_url.push_str(&format!("&{}={}", params.limit, limit));
         search_url.push_str(&format!("&{}={}", params.tags, tags));
-        search_url
+		search_url
     }
 
 	#[inline(never)]

@@ -44,10 +44,10 @@ lazy_static! {
 			},
 			
 			order: HashMap::from([
-				(Order::Newest, "sort:id_desc".into()),
-				(Order::Oldest, "sort:id_asc".into()),
-				(Order::MostLiked, "sort:score_desc".into()),
-				(Order::LeastLiked, "sort:score_asc".into()),
+				(Order::Newest, "sort:id:desc".into()),
+				(Order::Oldest, "sort:id:asc".into()),
+				(Order::MostLiked, "sort:score:desc".into()),
+				(Order::LeastLiked, "sort:score:asc".into()),
 			])
 		},
 		
