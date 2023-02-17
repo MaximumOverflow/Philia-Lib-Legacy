@@ -37,9 +37,7 @@ impl Tags {
 	pub fn iter<'l>(&'l self) -> Box<dyn Iterator<Item = &'l str> + 'l> {
 		match self {
 			Tags::All(tags) => Box::new(tags.iter().map(|t| t.as_str())),
-			Tags::Categorized(tags) => {
-				Box::new(tags.values().flat_map(|t| t.iter().map(|t| t.as_str())))
-			}
+			Tags::Categorized(tags) => Box::new(tags.values().flat_map(|t| t.iter().map(|t| t.as_str()))),
 		}
 	}
 }

@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Source {
-    pub name: String,
-    pub search: search::Schema,
+	pub name: String,
+	pub search: search::Schema,
 	pub tag_list: Option<tag_list::Schema>,
 }
 
@@ -62,7 +62,7 @@ pub mod search {
 			prefix: String,
 			categories: Vec<String>,
 			separator: Option<char>,
-		}
+		},
 	}
 }
 
@@ -72,6 +72,7 @@ pub mod tag_list {
 	#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 	pub struct Schema {
 		pub base_url: String,
+		pub result_key: Option<String>,
 		pub parameters: ParameterSchema,
 		pub tags: TagSchema,
 	}
@@ -90,4 +91,3 @@ pub mod tag_list {
 		pub count: String,
 	}
 }
-

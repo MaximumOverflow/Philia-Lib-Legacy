@@ -6,7 +6,7 @@ use crate::data::Post;
 #[derive(Debug)]
 pub struct SearchBuilder<'l> {
 	client: &'l Client,
-	
+
 	page: usize,
 	limit: usize,
 	order: Order,
@@ -14,7 +14,7 @@ pub struct SearchBuilder<'l> {
 	exclude: HashSet<String>,
 }
 
-impl <'l> SearchBuilder<'l> {
+impl<'l> SearchBuilder<'l> {
 	pub fn new(client: &'l Client) -> Self {
 		Self {
 			client,
@@ -25,7 +25,7 @@ impl <'l> SearchBuilder<'l> {
 			exclude: Default::default(),
 		}
 	}
-	
+
 	pub fn include_tag(&mut self, tag: &str) -> &mut Self {
 		if !self.include.contains(tag) {
 			self.exclude.remove(tag);
@@ -75,22 +75,13 @@ impl <'l> SearchBuilder<'l> {
 	}
 
 	pub fn search(self) -> Result<Vec<Post>, String> {
-		self.client.search(
-			self.page, 
-			self.limit, 
-			self.order,
-			self.include.into_iter(), 
-			self.exclude.into_iter(),
-		)
+		self.client
+			.search(self.page, self.limit, self.order, self.include.into_iter(), self.exclude.into_iter())
 	}
 
 	pub async fn search_async(self) -> Result<Vec<Post>, String> {
-		self.client.search_async(
-			self.page,
-			self.limit,
-			self.order,
-			self.include.into_iter(),
-			self.exclude.into_iter(),
-		).await
+		self.client
+			.search_async(self.page, self.limit, self.order, self.include.into_iter(), self.exclude.into_iter())
+			.await
 	}
 }

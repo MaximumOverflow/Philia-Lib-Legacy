@@ -5,7 +5,7 @@ use crate::prelude::Order;
 use crate::source::*;
 
 lazy_static! {
-    pub static ref RULE34: Source = Source {
+	pub static ref RULE34: Source = Source {
 		name: "Rule34".into(),
 
 		search: search::Schema {
@@ -42,7 +42,7 @@ lazy_static! {
 					("explicit".into(), Rating::Explicit),
 				])
 			},
-			
+
 			order: HashMap::from([
 				(Order::Newest, "sort:id:desc".into()),
 				(Order::Oldest, "sort:id:asc".into()),
@@ -50,17 +50,16 @@ lazy_static! {
 				(Order::LeastLiked, "sort:score:asc".into()),
 			])
 		},
-		
+
 		tag_list: None
 	};
-	
-    pub static ref E621: Source = Source {
+	pub static ref E621: Source = Source {
 		name: "E621".into(),
 
 		search: search::Schema {
 			base_url: "https://e621.net/posts.json?".into(),
 			result_key: Some("posts".into()),
-			
+
 			parameters: search::ParameterSchema {
 				tags: "tags".into(),
 				page: "page".into(),
@@ -86,7 +85,7 @@ lazy_static! {
 					],
 					separator: None,
 				},
-				
+
 				hash: "file.md5".into(),
 				score: "score.total".into(),
 				resource_url: "file.url".into(),
@@ -99,7 +98,7 @@ lazy_static! {
 					("e".into(), Rating::Explicit),
 				])
 			},
-			
+
 			order: HashMap::from([
 				(Order::Newest, "order:id_desc".into()),
 				(Order::Oldest, "order:id_asc".into()),
@@ -107,45 +106,43 @@ lazy_static! {
 				(Order::LeastLiked, "order:score_asc".into()),
 			])
 		},
-		
-		tag_list: Some(
-			tag_list::Schema {
-				base_url: "https://e621.net/tags.json?".into(),
-				parameters: tag_list::ParameterSchema {
-					page: "page".into(),
-					limit: "limit".into(),
-					search: "search[order]=count".into(),
-				},
-				tags: tag_list::TagSchema {
-					id: "id".into(),
-					name: "name".into(),
-					count: "post_count".into(),
-				}
+
+		tag_list: Some(tag_list::Schema {
+			base_url: "https://e621.net/tags.json?".into(),
+			result_key: None,
+			parameters: tag_list::ParameterSchema {
+				page: "page".into(),
+				limit: "limit".into(),
+				search: "search[order]=count".into(),
+			},
+			tags: tag_list::TagSchema {
+				id: "id".into(),
+				name: "name".into(),
+				count: "post_count".into(),
 			}
-		),
+		}),
 	};
-	
 	pub static ref DANBOORU: Source = Source {
 		name: "Danbooru".into(),
 		search: search::Schema {
 			base_url: "https://danbooru.donmai.us/posts.json?".into(),
 			result_key: None,
-			
+
 			parameters: search::ParameterSchema {
 				tags: "tags".into(),
 				page: "page".into(),
 				limit: "limit".into(),
 			},
-			
+
 			tag_separator: '+',
 			tag_exclusion_prefix: '-',
-			
+
 			post: search::PostSchema {
 				id: "id".into(),
 				hash: "md5".into(),
 				score: "score".into(),
 				resource_url: "file_url".into(),
-				
+
 				rating: "rating".into(),
 				rating_map: HashMap::from([
 					("g".into(), Rating::General),
@@ -153,20 +150,14 @@ lazy_static! {
 					("q".into(), Rating::Questionable),
 					("e".into(), Rating::Explicit),
 				]),
-				
+
 				tags: search::TagSchema::Categorized {
 					separator: Some(' '),
 					prefix: "tag_string_".into(),
-					categories: vec![
-						"general".into(),
-						"character".into(),
-						"copyright".into(),
-						"artist".into(),
-						"meta".into(),
-					],
+					categories: vec!["general".into(), "character".into(), "copyright".into(), "artist".into(), "meta".into(),],
 				}
 			},
-			
+
 			order: HashMap::from([
 				(Order::Oldest, "order:id".into()),
 				(Order::Newest, "order:id_desc".into()),
@@ -174,21 +165,77 @@ lazy_static! {
 				(Order::LeastLiked, "order:score_asc".into()),
 			])
 		},
-		
-		tag_list: Some(
-			tag_list::Schema {
-				base_url: "https://danbooru.donmai.us/tags.json?".into(),
-				parameters: tag_list::ParameterSchema {
-					page: "page".into(),
-					limit: "limit".into(),
-					search: "search[order]=count".into(),
-				},
-				tags: tag_list::TagSchema {
-					id: "id".into(),
-					name: "name".into(),
-					count: "post_count".into(),
-				}
+
+		tag_list: Some(tag_list::Schema {
+			base_url: "https://danbooru.donmai.us/tags.json?".into(),
+			result_key: None,
+			parameters: tag_list::ParameterSchema {
+				page: "page".into(),
+				limit: "limit".into(),
+				search: "search[order]=count".into(),
+			},
+			tags: tag_list::TagSchema {
+				id: "id".into(),
+				name: "name".into(),
+				count: "post_count".into(),
 			}
-		),
+		}),
+	};
+	pub static ref GELBOORU: Source = Source {
+		name: "Gelbooru".into(),
+		search: search::Schema {
+			base_url: "https://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&".into(),
+			result_key: Some("post".into()),
+
+			tag_separator: '+',
+			tag_exclusion_prefix: '-',
+
+			post: search::PostSchema {
+				id: "id".into(),
+				hash: "md5".into(),
+				score: "score".into(),
+				resource_url: "file_url".into(),
+				tags: search::TagSchema::All {
+					key: "tags".into(),
+					separator: Some(' '),
+				},
+				rating: "rating".into(),
+				rating_map: HashMap::from([
+					("general".into(), Rating::General),
+					("safe".into(), Rating::Safe),
+					("sensitive".into(), Rating::Sensitive),
+					("questionable".into(), Rating::Questionable),
+					("explicit".into(), Rating::Explicit),
+				]),
+			},
+
+			parameters: search::ParameterSchema {
+				tags: "tags".to_string(),
+				page: "pid".to_string(),
+				limit: "limit".to_string(),
+			},
+
+			order: HashMap::from([
+				(Order::Oldest, "sort:id:asc".into()),
+				(Order::Newest, "sort:id:desc".into()),
+				(Order::MostLiked, "sort:score:desc".into()),
+				(Order::LeastLiked, "sort:score:asc".into()),
+			])
+		},
+
+		tag_list: Some(tag_list::Schema {
+			base_url: "https://gelbooru.com/index.php?page=dapi&s=tag&q=index&json=1&".into(),
+			result_key: Some("tag".into()),
+			parameters: tag_list::ParameterSchema {
+				page: "pid".into(),
+				limit: "limit".into(),
+				search: "order=desc&orderby=count".into(),
+			},
+			tags: tag_list::TagSchema {
+				id: "id".to_string(),
+				name: "name".to_string(),
+				count: "count".to_string(),
+			},
+		}),
 	};
 }
