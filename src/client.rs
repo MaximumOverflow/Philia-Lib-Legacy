@@ -6,6 +6,7 @@ use serde_json::{Map, Value};
 pub const DEFAULT_USER_AGENT: &str =
     const_format::formatcp!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
 
+#[derive(Debug, Clone)]
 pub struct Client {
     source: Source,
     user_agent: Option<String>,
@@ -25,13 +26,21 @@ impl Client {
             user_agent: Some(agent),
         }
     }
+	
+	pub fn source(&self) -> &Source {
+		&self.source
+	}
+	
+	pub fn user_agent(&self) -> &Option<String> {
+		&self.user_agent
+	}
 
     pub fn search(
         &self,
         page: usize,
         limit: usize,
-        include: &[String],
-        exclude: &[String],
+        include: impl Iterator<Item=String>,
+        exclude: impl Iterator<Item=String>,
     ) -> Result<Vec<Post>, String> {
         let search_url = self.get_search_url(page, limit, include, exclude);
         let result = self.make_request(search_url)?;
@@ -42,8 +51,8 @@ impl Client {
         &self,
         page: usize,
         limit: usize,
-        include: &[String],
-        exclude: &[String],
+        include: impl Iterator<Item=String>,
+        exclude: impl Iterator<Item=String>,
     ) -> Result<Vec<Post>, String> {
         let search_url = self.get_search_url(page, limit, include, exclude);
         let result = self.make_async_request(search_url).await?;
@@ -134,19 +143,29 @@ impl Client {
 		serde_json::from_slice::<Value>(&bytes).map_err(|e| e.to_string())
 	}
 
+	#[inline(never)]
     fn get_search_url(
         &self,
         page: usize,
         limit: usize,
-        include: &[String],
-        exclude: &[String],
+        mut include: impl Iterator<Item=String>,
+        exclude: impl Iterator<Item=String>,
     ) -> String {
         let tags = {
-            let mut tags = include.join("+");
+            let mut tags = String::new();
+			
+			if let Some(tag) = include.next() {
+				tags.push_str(&tag);
+			}
+			for tag in include {
+				tags.push('+');
+				tags.push_str(&tag);
+			}
+			
             for tag in exclude {
                 tags.push('+');
                 tags.push('-');
-                tags.push_str(tag);
+                tags.push_str(&tag);
             }
 
             tags
@@ -160,6 +179,7 @@ impl Client {
         search_url
     }
 
+	#[inline(never)]
     fn parse_search_results(&self, value: Value) -> Result<Vec<Post>, String> {
         let results = match &self.source.search.result_key {
             Some(key) => {
