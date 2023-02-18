@@ -202,26 +202,36 @@ impl Client {
 			};
 
 			posts.push(Post {
-				id: get_value(&info, &key_mappings.id)
-					.ok_or_else(|| format!("Missing value {}", key_mappings.id))?
-					.as_i64()
-					.ok_or_else(|| format!("{} is not an i64", key_mappings.id))? as _,
+				id: {
+					let value = get_value(&info, &key_mappings.id).ok_or_else(|| format!("Missing value {}", key_mappings.id))?;
 
-				score: get_value(&info, &key_mappings.score)
-					.ok_or_else(|| format!("Missing value {}", key_mappings.score))?
-					.as_i64()
-					.ok_or_else(|| format!("{} is not an i64", key_mappings.score))? as _,
+					if value.is_null() {
+						continue;
+					}
+
+					value.as_i64().ok_or_else(|| format!("{} is not an i64", key_mappings.id))? as _
+				},
+
+				score: {
+					let value = get_value(&info, &key_mappings.score).ok_or_else(|| format!("Missing value {}", key_mappings.score))?;
+
+					if value.is_null() {
+						continue;
+					}
+
+					value.as_i64().ok_or_else(|| format!("{} is not an i64", key_mappings.id))? as _
+				},
 
 				rating: {
-					let key = get_value(&info, &key_mappings.rating)
-						.ok_or_else(|| format!("Missing value {}", key_mappings.rating))?
-						.as_str()
-						.ok_or_else(|| format!("{} is not a string", key_mappings.rating))?;
+					let key = get_value(&info, &key_mappings.rating).ok_or_else(|| format!("Missing value {}", key_mappings.rating))?;
 
-					*key_mappings
-						.rating_map
-						.get(key)
-						.ok_or_else(|| format!("Unknown rating alias '{key}'"))?
+					if key.is_null() {
+						continue;
+					}
+
+					let key = key.as_str().ok_or_else(|| format!("{} is not a string", key_mappings.rating))?;
+
+					*key_mappings.rating_map.get(key).ok_or_else(|| format!("Unknown rating alias '{key}'"))?
 				},
 
 				tags: {
@@ -303,6 +313,7 @@ impl Client {
 					None => None,
 					Some(value) => value.as_str().map(|v| v.to_string()),
 				},
+
 				resource_url: match get_value(&info, &key_mappings.resource_url) {
 					None => None,
 					Some(value) => value.as_str().map(|v| v.to_string()),
