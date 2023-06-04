@@ -53,6 +53,7 @@ lazy_static! {
 
 		tag_list: None
 	};
+	
 	pub static ref E621: Source = Source {
 		name: "E621".into(),
 
@@ -122,6 +123,7 @@ lazy_static! {
 			}
 		}),
 	};
+	
 	pub static ref DANBOORU: Source = Source {
 		name: "Danbooru".into(),
 		search: search::Schema {
@@ -181,6 +183,7 @@ lazy_static! {
 			}
 		}),
 	};
+	
 	pub static ref GELBOORU: Source = Source {
 		name: "Gelbooru".into(),
 		search: search::Schema {

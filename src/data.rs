@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Post {
 	pub id: usize,
 	pub tags: Tags,
@@ -27,7 +27,7 @@ pub struct Tag {
 	pub count: usize,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Tags {
 	All(Vec<String>),
 	Categorized(HashMap<String, Vec<String>>),
