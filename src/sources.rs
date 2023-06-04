@@ -32,6 +32,7 @@ lazy_static! {
 				hash: "hash".into(),
 				score: "score".into(),
 				resource_url: "file_url".into(),
+				preview_url: Some("preview_url".into()),
 
 				rating: "rating".into(),
 				rating_map: HashMap::from([
@@ -90,6 +91,7 @@ lazy_static! {
 				hash: "file.md5".into(),
 				score: "score.total".into(),
 				resource_url: "file.url".into(),
+				preview_url: Some("preview.url".into()),
 
 				rating: "rating".into(),
 				rating_map: HashMap::from([
@@ -144,6 +146,7 @@ lazy_static! {
 				hash: "md5".into(),
 				score: "score".into(),
 				resource_url: "file_url".into(),
+				preview_url: Some("preview_file_url".into()),
 
 				rating: "rating".into(),
 				rating_map: HashMap::from([
@@ -198,6 +201,7 @@ lazy_static! {
 				hash: "md5".into(),
 				score: "score".into(),
 				resource_url: "file_url".into(),
+				preview_url: Some("preview_url".into()),
 				tags: search::TagSchema::All {
 					key: "tags".into(),
 					separator: Some(' '),

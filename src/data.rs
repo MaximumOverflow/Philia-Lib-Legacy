@@ -8,6 +8,7 @@ pub struct Post {
 	pub score: isize,
 	pub rating: Rating,
 	pub hash: Option<String>,
+	pub preview_url: Option<String>,
 	pub resource_url: Option<String>,
 }
 

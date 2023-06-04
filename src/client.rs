@@ -318,6 +318,14 @@ impl Client {
 					None => None,
 					Some(value) => value.as_str().map(|v| v.to_string()),
 				},
+
+				preview_url: match &key_mappings.preview_url {
+					None => None,
+					Some(preview_url) => match get_value(&info, preview_url) {
+						None => None,
+						Some(value) => value.as_str().map(|v| v.to_string()),
+					}
+				},
 			})
 		}
 

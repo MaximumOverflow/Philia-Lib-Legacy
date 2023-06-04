@@ -44,6 +44,7 @@ pub mod search {
 		pub hash: String,
 		pub score: String,
 		pub resource_url: String,
+		pub preview_url: Option<String>,
 
 		pub tags: TagSchema,
 
