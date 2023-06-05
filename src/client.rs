@@ -202,6 +202,8 @@ impl Client {
 			};
 
 			posts.push(Post {
+				#[cfg(feature = "additional_post_metadata")]
+				source: self.source.name.clone(),
 				id: {
 					let value = get_value(&info, &key_mappings.id).ok_or_else(|| format!("Missing value {}", key_mappings.id))?;
 

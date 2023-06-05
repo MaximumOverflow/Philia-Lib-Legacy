@@ -3,6 +3,9 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Post {
+	#[cfg(feature = "additional_post_metadata")]
+	pub source: String,
+	
 	pub id: usize,
 	pub tags: Tags,
 	pub score: isize,
