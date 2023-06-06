@@ -1,5 +1,6 @@
-use crate::source::search::Order;
+use crate::source::SearchOrder;
 use std::collections::HashSet;
+use std::error::Error;
 use crate::client::Client;
 use crate::data::Post;
 
@@ -7,9 +8,9 @@ use crate::data::Post;
 pub struct SearchBuilder<'l> {
 	client: &'l Client,
 
-	page: usize,
-	limit: usize,
-	order: Order,
+	page: u32,
+	limit: u32,
+	order: SearchOrder,
 	include: HashSet<String>,
 	exclude: HashSet<String>,
 }
@@ -20,7 +21,7 @@ impl<'l> SearchBuilder<'l> {
 			client,
 			page: 1,
 			limit: 16,
-			order: Order::Newest,
+			order: SearchOrder::Newest,
 			include: Default::default(),
 			exclude: Default::default(),
 		}
@@ -59,27 +60,27 @@ impl<'l> SearchBuilder<'l> {
 		self
 	}
 
-	pub fn order(&mut self, order: Order) -> &mut Self {
+	pub fn order(&mut self, order: SearchOrder) -> &mut Self {
 		self.order = order;
 		self
 	}
 
-	pub fn limit(&mut self, limit: usize) -> &mut Self {
+	pub fn limit(&mut self, limit: u32) -> &mut Self {
 		self.limit = limit;
 		self
 	}
 
-	pub fn page(&mut self, page: usize) -> &mut Self {
+	pub fn page(&mut self, page: u32) -> &mut Self {
 		self.page = page;
 		self
 	}
 
-	pub fn search(self) -> Result<Vec<Post>, String> {
+	pub fn search(self) -> Result<Vec<Post>, Box<dyn Error>> {
 		self.client
 			.search(self.page, self.limit, self.order, self.include.into_iter(), self.exclude.into_iter())
 	}
 
-	pub async fn search_async(self) -> Result<Vec<Post>, String> {
+	pub async fn search_async(self) -> Result<Vec<Post>, Box<dyn Error>> {
 		self.client
 			.search_async(self.page, self.limit, self.order, self.include.into_iter(), self.exclude.into_iter())
 			.await
