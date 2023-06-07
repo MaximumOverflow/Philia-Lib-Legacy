@@ -18,7 +18,10 @@ pub struct Client {
 
 impl Client {
 	pub fn new(source: impl Source + 'static) -> Self {
-		Self { source: Arc::new(source), user_agent: None }
+		Self {
+			source: Arc::new(source),
+			user_agent: None,
+		}
 	}
 
 	pub fn with_user_agent(source: impl Source + 'static, agent: String) -> Self {
@@ -48,7 +51,7 @@ impl Client {
 		let Some(url) = self.source.get_search_url(page, limit, order, include, exclude) else {
 			return Err(UNSUPPORTED.into());
 		};
-		
+
 		let result = self.make_request(url)?;
 		self.source.parse_search_result(&result)
 	}
@@ -65,7 +68,7 @@ impl Client {
 		let Some(url) = self.source.get_search_url(page, limit, order, include, exclude) else {
 			return Err(UNSUPPORTED.into());
 		};
-		
+
 		let result = self.make_async_request(url).await?;
 		self.source.parse_search_result(&result)
 	}
@@ -74,7 +77,7 @@ impl Client {
 		let Some(url) = self.source.get_tag_list_url(page, limit, order) else {
 			return Err(UNSUPPORTED.into());
 		};
-		
+
 		let result = self.make_request(url)?;
 		self.source.parse_tag_list(&result)
 	}
@@ -143,15 +146,9 @@ impl Debug for Client {
 }
 
 pub fn make_http_client(user_agent: &str) -> Result<reqwest::blocking::Client, reqwest::Error> {
-	reqwest::blocking::ClientBuilder::new()
-		.user_agent(user_agent)
-		.https_only(false)
-		.build()
+	reqwest::blocking::ClientBuilder::new().user_agent(user_agent).https_only(false).build()
 }
 
 pub fn make_async_http_client(user_agent: &str) -> Result<reqwest::Client, reqwest::Error> {
-	reqwest::ClientBuilder::new()
-		.user_agent(user_agent)
-		.https_only(false)
-		.build()
+	reqwest::ClientBuilder::new().user_agent(user_agent).https_only(false).build()
 }
