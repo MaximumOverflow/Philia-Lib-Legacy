@@ -59,8 +59,10 @@ mod scripting {
 	use reqwest::Url;
 	use std::error::Error;
 	use itertools::Itertools;
+	use rhai::plugin::*;
 	use rhai::{AST, Dynamic, Engine, Scope};
 	use rhai::packages::{LanguageCorePackage, Package};
+	use serde_json::Value;
 	use crate::data::{Post, Tag};
 	use crate::source::{FeatureFlags, Source};
 	use crate::prelude::{SearchOrder, TagOrder};

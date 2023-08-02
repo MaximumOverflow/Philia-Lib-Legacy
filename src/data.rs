@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Post {
@@ -42,8 +42,8 @@ pub struct Tag {
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Tags {
-	All(Vec<String>),
-	Categorized(HashMap<String, Vec<String>>),
+	All(HashSet<String>),
+	Categorized(HashMap<String, HashSet<String>>),
 }
 
 impl Tags {
@@ -51,6 +51,13 @@ impl Tags {
 		match self {
 			Tags::All(tags) => Box::new(tags.iter().map(|t| t.as_str())),
 			Tags::Categorized(tags) => Box::new(tags.values().flat_map(|t| t.iter().map(|t| t.as_str()))),
+		}
+	}
+	
+	pub fn contains(&self, tag: &str) -> bool {
+		match self {
+			Tags::All(tags) => tags.contains(tag),
+			Tags::Categorized(tags) => tags.values().any(|tags| tags.contains(tag)),
 		}
 	}
 }
